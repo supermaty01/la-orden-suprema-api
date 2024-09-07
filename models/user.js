@@ -7,6 +7,10 @@ const userSchema = new mongoose.Schema({
   resetPasswordCode: { type: String, default: null, required: false },
   pendingReset: { type: Boolean, default: false, required: false },
   role: { type: String, required: true },
+  // Assassin fields
+  alias: { type: String, required: false },
+  country: { type: String, required: false },
+  address: { type: String, required: false },
 });
 
 //Export model
