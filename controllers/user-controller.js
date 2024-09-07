@@ -12,11 +12,11 @@ exports.login = async (req, res) => {
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(400).send("User not found");
+      return res.status(400).send("El email no se encuentra registrado");
     }
     const validPassword = await bcrypt.compare(req.body.password, user.password);
     if (!validPassword) {
-      return res.status(400).send("Invalid password");
+      return res.status(400).send("La contraseña no es válida");
     }
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '1h',
@@ -28,6 +28,6 @@ exports.login = async (req, res) => {
       return res.status(400).send(error.errors);
     }
     console.error(error);
-    res.status(500).send("Internal server error");
+    res.status(500).send("Error al iniciar sesión");
   }
 }

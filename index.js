@@ -1,5 +1,4 @@
 const express = require('express');
-const testRouter = require('./routes/test');
 const adminsRouter = require('./routes/admins');
 const loginRouter = require('./routes/login');
 const dotenv = require('dotenv');
@@ -19,6 +18,5 @@ app.listen(port, () => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use('/test', testRouter);
 app.use('/admins', adminsRouter);
 app.use('/login', loginRouter);
