@@ -1,6 +1,6 @@
 const express = require('express');
 const adminsRouter = require('./routes/admins');
-const loginRouter = require('./routes/login');
+const indexRouter = require('./routes/index');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
@@ -18,5 +18,5 @@ app.listen(port, () => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use('', indexRouter);
 app.use('/admins', adminsRouter);
-app.use('/login', loginRouter);
