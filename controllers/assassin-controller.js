@@ -15,9 +15,14 @@ exports.createAssassin = async (req, res) => {
     });
     schema.parse(req.body);
 
-    const existingUser = await User.findOne({ email: req.body.email.toLowerCase() });
-    if (existingUser) {
+    const existingEmail = await User.findOne({ email: req.body.email.toLowerCase() });
+    if (existingEmail) {
       return res.status(400).send("El email ya está en uso");
+    }
+
+    const existingAlias = await User.findOne({ alias: req.body.alias });
+    if (existingAlias) {
+      return res.status(400).send("El pseudónimo ya está en uso");
     }
 
     const password = Math.random().toString(36).slice(-8);
@@ -50,3 +55,90 @@ exports.createAssassin = async (req, res) => {
     res.status(500).send("Error al crear el asesino");
   }
 }
+
+exports.listAssassins = async (req, res) => {
+  try {
+    const filters = {
+      role: UserRole.ASSASSIN,
+    };
+
+    let assassins;
+
+    if (req.query.alias) {
+      filters.alias = { $regex: req.query.alias, $options: 'i' };
+    }
+
+    if (req.role === UserRole.ADMIN) {
+      if (req.query.country) {
+        filters.country = { $regex: req.query.country, $options: 'i' };
+      }
+      if (req.query.name) {
+        filters.name = { $regex: req.query.name, $options: 'i' };
+      }
+      if (req.query.email) {
+        filters.email = { $regex: req.query.email, $options: 'i' };
+      }
+      if (req.query.address) {
+        filters.address = { $regex: req.query.address, $options: 'i' };
+      }
+      if (req.query.status) {
+        filters.status = req.query.status;
+      }
+
+      assassins = await User.find(filters, {
+        _id: 1,
+        email: 1,
+        name: 1,
+        alias: 1,
+        country: 1,
+        address: 1,
+        status: 1,
+      });
+    } else {
+      filters.status = "active";
+
+      const user = await User.findById(req.userId);
+      const assassinInformationBought = user.assassinInformationBought;
+
+      assassins = await User.aggregate([
+        {
+          $match: filters,
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            alias: 1,
+            country: 1,
+            isPurchased: {
+              $in: ["$_id", assassinInformationBought],
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: {
+              $cond: {
+                if: "$isPurchased",
+                then: "$name",
+                else: {
+                  $literal: "???",
+                },
+              },
+            },
+            alias: 1,
+            country: 1,
+            isPurchased: 1,
+          },
+        },
+      ]);
+    }
+
+
+    res.status(200).json(assassins);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al listar los asesinos");
+  }
+} 

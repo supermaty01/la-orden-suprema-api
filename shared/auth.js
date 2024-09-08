@@ -9,7 +9,7 @@ exports.verifyToken = (req, res, next) => {
   }
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.username = payload.username;
+    req.userId = payload.userId;
     req.role = payload.role;
     next();
   } catch (error) {
@@ -33,6 +33,16 @@ exports.isAssassin = (req, res, next) => {
       next();
     } else {
       return res.status(403).json({ message: "No cuenta con los permisos requeridos para acceder a esta ruta. Rol ASSASSIN es requerido." });
+    }
+  });
+}
+
+exports.isAuthorized = (req, res, next) => {
+  this.verifyToken(req, res, () => {
+    if (req.role === UserRole.ADMIN || req.role === UserRole.ASSASSIN) {
+      next();
+    } else {
+      return res.status(403).json({ message: "No cuenta con los permisos requeridos para acceder a esta ruta." });
     }
   });
 }

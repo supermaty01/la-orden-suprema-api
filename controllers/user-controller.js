@@ -19,7 +19,7 @@ exports.login = async (req, res) => {
     if (!validPassword) {
       return res.status(400).send("La contraseña no es válida");
     }
-    const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
     res.status(200).send(token);

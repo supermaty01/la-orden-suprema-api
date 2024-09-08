@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
   alias: { type: String, required: false },
   country: { type: String, required: false },
   address: { type: String, required: false },
+  status: { type: String, default: "active", required: false },
+  assassinInformationBought: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
 });
 
 //Export model
