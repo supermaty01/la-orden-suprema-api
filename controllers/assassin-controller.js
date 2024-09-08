@@ -1,8 +1,10 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const z = require('zod');
-const { UserRole, UserStatus } = require('../shared/constants');
+const { UserRole, UserStatus, Configuration } = require('../shared/constants');
 const mailController = require('./mail-controller');
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 exports.createAssassin = async (req, res) => {
   try {
@@ -96,6 +98,7 @@ exports.listAssassins = async (req, res) => {
       });
     } else {
       filters.status = UserStatus.ACTIVE;
+      filters._id = { $ne: ObjectId.createFromHexString(req.userId) };
 
       const user = await User.findById(req.userId);
       const assassinInformationBought = user.assassinInformationBought;
@@ -141,4 +144,39 @@ exports.listAssassins = async (req, res) => {
     console.error(error);
     res.status(500).send("Error al listar los asesinos");
   }
-} 
+}
+
+exports.purchaseAssassinInformation = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(400).send("Usuario no encontrado");
+    }
+
+    const schema = z.object({
+      assassinId: z.string({ required_error: "El ID del asesino al cual se le desea comprar la información es obligatorio" }),
+    });
+    schema.parse(req.body);
+
+    if (req.body.assassinId === req.userId) {
+      return res.status(400).send("No puedes comprar tu propia información");
+    }
+
+    if (user.assassinInformationBought.includes(req.body.assassinId)) {
+      return res.status(400).send("Ya has comprado la información de este asesino");
+    }
+
+    if (user.coins < Configuration.INFORMATION_PRICE) {
+      return res.status(400).send("No cuentas con suficientes monedas para comprar la información del asesino");
+    }
+
+    user.assassinInformationBought.push(req.body.assassinId);
+    user.coins -= Configuration.INFORMATION_PRICE;
+    await user.save();
+
+    res.status(200).send("Información del asesino comprada exitosamente");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al comprar la información del asesino");
+  }
+}

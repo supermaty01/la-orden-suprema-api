@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordCode: { type: String, default: null, required: false },
   pendingReset: { type: Boolean, default: false, required: false },
   role: { type: String, required: true },
+  coins: { type: Number, default: 0, required: true },
   // Assassin fields
   alias: { type: String, required: false },
   country: { type: String, required: false },
