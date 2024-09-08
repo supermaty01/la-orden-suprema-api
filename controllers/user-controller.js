@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const z = require('zod');
 const jwt = require('jsonwebtoken');
 const mailController = require('./mail-controller');
+const { UserStatus } = require('../shared/constants');
 
 exports.login = async (req, res) => {
   try {
@@ -18,6 +19,9 @@ exports.login = async (req, res) => {
     const validPassword = await bcrypt.compare(req.body.password, user.password);
     if (!validPassword) {
       return res.status(400).send("La contraseña no es válida");
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      return res.status(403).send("El usuario no está activo");
     }
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '1h',

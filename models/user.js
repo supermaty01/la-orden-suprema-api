@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { UserStatus } = require('../shared/constants');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -11,7 +12,7 @@ const userSchema = new mongoose.Schema({
   alias: { type: String, required: false },
   country: { type: String, required: false },
   address: { type: String, required: false },
-  status: { type: String, default: "active", required: false },
+  status: { type: String, default: UserStatus.ACTIVE, required: false },
   assassinInformationBought: [
     {
       type: mongoose.Schema.Types.ObjectId,

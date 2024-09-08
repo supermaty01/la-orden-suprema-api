@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const z = require('zod');
-const UserRole = require('../shared/user-roles').UserRole;
+const { UserRole, UserStatus } = require('../shared/constants');
 const mailController = require('./mail-controller');
 
 exports.createAssassin = async (req, res) => {
@@ -95,7 +95,7 @@ exports.listAssassins = async (req, res) => {
         status: 1,
       });
     } else {
-      filters.status = "active";
+      filters.status = UserStatus.ACTIVE;
 
       const user = await User.findById(req.userId);
       const assassinInformationBought = user.assassinInformationBought;

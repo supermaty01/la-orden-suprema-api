@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const z = require('zod');
-const UserRole = require('../shared/user-roles').UserRole;
+const { UserRole } = require('../shared/constants');
 
 exports.createAdmin = async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { UserRole } = require("./user-roles");
+const { UserRole } = require("./constants");
 
 exports.verifyToken = (req, res, next) => {
   const header = req.header("Authorization") || "";
