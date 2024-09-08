@@ -1,7 +1,8 @@
 const User = require('../models/user');
+const Transaction = require('../models/transaction');
 const bcrypt = require('bcrypt');
 const z = require('zod');
-const { UserRole, UserStatus, Configuration } = require('../shared/constants');
+const { UserRole, UserStatus, Configuration, TransactionDescription, TransactionType } = require('../shared/constants');
 const mailController = require('./mail-controller');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
@@ -172,7 +173,16 @@ exports.purchaseAssassinInformation = async (req, res) => {
 
     user.assassinInformationBought.push(req.body.assassinId);
     user.coins -= Configuration.INFORMATION_PRICE;
+
+    const transaction = new Transaction({
+      userId: req.userId,
+      amount: -Configuration.INFORMATION_PRICE,
+      description: TransactionDescription.INFORMATION_PURCHASE,
+      type: TransactionType.OUTCOME,
+      date: new Date(),
+    });
     await user.save();
+    await transaction.save();
 
     res.status(200).send("Información del asesino comprada exitosamente");
   } catch (error) {

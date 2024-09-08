@@ -2,6 +2,7 @@ const express = require('express');
 const adminsRouter = require('./routes/admins');
 const indexRouter = require('./routes/index');
 const assassinsRouter = require('./routes/assassins');
+const transactionsRouter = require('./routes/transactions');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
@@ -22,3 +23,4 @@ app.use(express.urlencoded({ extended: false }));
 app.use('', indexRouter);
 app.use('/admins', adminsRouter);
 app.use('/assassins', assassinsRouter);
+app.use('/transactions', transactionsRouter);
