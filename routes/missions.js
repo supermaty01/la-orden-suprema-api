@@ -6,7 +6,6 @@ const { isAuthorized, isAdmin } = require("../shared/auth");
 // Create a new mission
 router.post("/", isAuthorized, missionController.createMission);
 
-
 // Mission list for admins
 router.get("/admin", isAdmin, missionController.getAdminMissions);
 

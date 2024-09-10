@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { UserStatus } = require('../shared/constants');
-const File = require('./file');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },

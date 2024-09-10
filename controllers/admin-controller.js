@@ -14,7 +14,7 @@ exports.createAdmin = async (req, res) => {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const existingUser = await User.findOne({ email: req.body.email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).send("El email ya está en uso");
+      return res.status(400).json({ message: "El email ya está en uso" });
     }
     const user = new User({
       email: req.body.email.toLowerCase(),
@@ -23,12 +23,12 @@ exports.createAdmin = async (req, res) => {
       role: UserRole.ADMIN,
     });
     await user.save();
-    res.status(201).send("Administador creado exitosamente");
+    res.status(201).json({ message: "Administador creado exitosamente" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     }
     console.error(error);
-    res.status(500).send("Error al crear el administrador");
+    res.status(500).json({ message: "Error al crear el administrador" });
   }
 }

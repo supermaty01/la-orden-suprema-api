@@ -14,26 +14,26 @@ exports.login = async (req, res) => {
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(400).send("El email no se encuentra registrado");
+      return res.status(400).json({ message: "El email no se encuentra registrado" });
     }
     const validPassword = await bcrypt.compare(req.body.password, user.password);
     if (!validPassword) {
-      return res.status(400).send("La contraseña no es válida");
+      return res.status(400).json({ message: "La contraseña no es válida" });
     }
     if (user.status !== UserStatus.ACTIVE) {
-      return res.status(403).send("El usuario no está activo");
+      return res.status(403).json({ message: "El usuario no está activo" });
     }
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
-    res.status(200).send(token);
+    res.status(200).json({ token });
   }
   catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     }
     console.error(error);
-    res.status(500).send("Error al iniciar sesión");
+    res.status(500).json({ message: "Error al iniciar sesión" });
   }
 }
 
@@ -45,19 +45,19 @@ exports.forgotPassword = async (req, res) => {
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(400).send("El email no se encuentra registrado");
+      return res.status(400).json({ message: "El email no se encuentra registrado" });
     }
     const code = Math.floor(100000 + Math.random() * 900000);
     user.resetPasswordCode = code.toString();
     await user.save();
     await mailController.send(user.email, 'Código de recuperación de contraseña', `Su código de recuperación de contraseña es: ${code}`, `Su código de recuperación de contraseña es: <b>${code}</b>`);
-    res.status(200).send("Código de recuperación de contraseña enviado");
+    res.status(200).json({ message: "Código de recuperación de contraseña enviado" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     } else {
       console.error(error);
-      res.status(500).send("Error al solicitar la recuperación de contraseña");
+      res.status(500).json({ message: "Error al solicitar la recuperación de contraseña" });
     }
   }
 }
@@ -71,20 +71,20 @@ exports.forgotPasswordCode = async (req, res) => {
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(400).send("El email no se encuentra registrado");
+      return res.status(400).json({ message: "El email no se encuentra registrado" });
     }
     if (user.resetPasswordCode !== req.body.code) {
-      return res.status(400).send("El código no es válido");
+      return res.status(400).json({ message: "El código no es válido" });
     }
     user.pendingReset = true;
     await user.save();
-    res.status(200).send("Código de recuperación de contraseña correcto");
+    res.status(200).json({ message: "Código de recuperación de contraseña correcto" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     } else {
       console.error(error);
-      res.status(500).send("Error al verificar el código de recuperación de contraseña");
+      res.status(500).json({ message: "Error al verificar el código de recuperación de contraseña" });
     }
   }
 }
@@ -98,22 +98,22 @@ exports.forgotPasswordReset = async (req, res) => {
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(400).send("El email no se encuentra registrado");
+      return res.status(400).json({ message: "El email no se encuentra registrado" });
     }
     if (!user.pendingReset) {
-      return res.status(400).send("No se ha solicitado la recuperación de contraseña");
+      return res.status(400).json({ message: "No se ha solicitado la recuperación de contraseña" });
     }
     user.password = await bcrypt.hash(req.body.password, 10);
     user.resetPasswordCode = null;
     user.pendingReset = false;
     await user.save();
-    res.status(200).send("Contraseña actualizada correctamente");
+    res.status(200).json({ message: "Contraseña actualizada correctamente" });
   }
   catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     }
     console.error(error);
-    res.status(500).send("Error al actualizar la contraseña");
+    res.status(500).json({ message: "Error al actualizar la contraseña" });
   }
 }

@@ -26,12 +26,12 @@ exports.createAssassin = async (req, res) => {
 
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
-      return res.status(400).send("El email ya está en uso");
+      return res.status(400).json({ message: "El email ya está en uso" });
     }
 
     const existingAlias = await User.findOne({ alias });
     if (existingAlias) {
-      return res.status(400).send("El pseudónimo ya está en uso");
+      return res.status(400).json({ message: "El pseudónimo ya está en uso" });
     }
 
     const password = Math.random().toString(36).slice(-8);
@@ -59,13 +59,13 @@ exports.createAssassin = async (req, res) => {
       `Hola ${user.name}, tu contraseña es: ${password}`,
       `Hola <b>${user.name}</b>, tu contraseña es: <b>${password}</b>`
     );
-    res.status(201).send("Asesino creado exitosamente");
+    res.status(201).json({ message: "Asesino creado exitosamente" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     }
     console.error(error);
-    res.status(500).send("Error al crear el asesino");
+    res.status(500).json({ message: "Error al crear el asesino" });
   }
 }
 
@@ -153,7 +153,7 @@ exports.listAssassins = async (req, res) => {
     res.status(200).json(assassins);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al listar los asesinos");
+    res.status(500).json({ message: "Error al listar los asesinos" });
   }
 }
 
@@ -161,7 +161,7 @@ exports.purchaseAssassinInformation = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(400).send("Usuario no encontrado");
+      return res.status(400).json({ message: "Usuario no encontrado" });
     }
 
     const schema = z.object({
@@ -170,15 +170,15 @@ exports.purchaseAssassinInformation = async (req, res) => {
     schema.parse(req.body);
 
     if (req.body.assassinId === req.userId) {
-      return res.status(400).send("No puedes comprar tu propia información");
+      return res.status(400).json({ message: "No puedes comprar tu propia información" });
     }
 
     if (user.assassinInformationBought.includes(req.body.assassinId)) {
-      return res.status(400).send("Ya has comprado la información de este asesino");
+      return res.status(400).json({ message: "Ya has comprado la información de este asesino" });
     }
 
     if (user.coins < Configuration.INFORMATION_PRICE) {
-      return res.status(400).send("No cuentas con suficientes monedas para comprar la información del asesino");
+      return res.status(400).json({ message: "No cuentas con suficientes monedas para comprar la información del asesino" });
     }
 
     user.assassinInformationBought.push(req.body.assassinId);
@@ -194,9 +194,9 @@ exports.purchaseAssassinInformation = async (req, res) => {
     await user.save();
     await transaction.save();
 
-    res.status(200).send("Información del asesino comprada exitosamente");
+    res.status(200).json({ message: "Información del asesino comprada exitosamente" });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al comprar la información del asesino");
+    res.status(500).json({ message: "Error al comprar la información del asesino" });
   }
 }

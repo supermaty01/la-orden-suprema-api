@@ -9,7 +9,7 @@ exports.listTransactions = async (req, res) => {
     res.status(200).json(transactions);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al listar las transacciones");
+    res.status(500).json({ message: "Error al listar las transacciones" });
   }
 }
 
@@ -30,13 +30,13 @@ exports.buyCoins = async (req, res) => {
     });
     await user.save();
     await transaction.save();
-    res.status(200).send("Monedas compradas exitosamente");
+    res.status(200).json({ message: "Monedas compradas exitosamente" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     } else {
       console.error(error);
-      res.status(500).send("Error al comprar monedas");
+      res.status(500).json({ message: "Error al comprar monedas" });
     }
   }
 }
