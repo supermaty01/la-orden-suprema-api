@@ -20,6 +20,21 @@ exports.TransactionDescription = {
   MISSION_CREATION: 'Creación de misión',
 }
 
+exports.MissionPaymentType = {
+  COINS: "COINS",
+  BLOOD_DEBT: "BLOOD_DEBT",
+  BLOOD_DEBT_COLLECTION: "BLOOD_DEBT_COLLECTION",
+}
+
+exports.MissionStatus = {
+  CREATED: "CREATED",
+  PUBLISHED: "PUBLISHED",
+  REJECTED: "REJECTED",
+  ASSIGNED: "ASSIGNED",
+  COMPLETED: "COMPLETED",
+  PAID: "PAID",
+}
+
 exports.Configuration = {
   MONEY_PER_COIN: 10,
   INFORMATION_PRICE: 100,

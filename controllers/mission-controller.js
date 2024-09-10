@@ -1,0 +1,69 @@
+const { MissionPaymentType, MissionStatus, UserRole, TransactionDescription, TransactionType } = require("../shared/constants");
+const Mission = require("../models/mission");
+const User = require("../models/user");
+const Transaction = require("../models/transaction");
+const z = require('zod');
+
+exports.createMission = async (req, res) => {
+  try {
+    const schema = z.object({
+      description: z.string().min(3).max(50),
+      details: z.string().min(3).max(500),
+      paymentType: z.string(),
+      coinsAmount: z.number().int().positive().optional(),
+    }).refine((data) => !(data.paymentType === MissionPaymentType.COINS && !data.coinsAmount), {
+      message: "La cantidad de monedas es requerida para misiones con pago en monedas de asesino",
+      path: ["coinsAmount"],
+    }).refine((data) => !(data.paymentType !== MissionPaymentType.COINS && req.role === UserRole.ADMIN), {
+      message: "Los administradores solo pueden crear misiones con pago en monedas de asesino",
+      path: ["paymentType"],
+    });
+    schema.parse(req.body);
+
+    const { description, details, paymentType, coinsAmount } = req.body;
+
+    if (paymentType === MissionPaymentType.COINS) {
+      const user = await User.findById(req.userId);
+      if (user.coins < coinsAmount) {
+        return res.status(400).send("No tienes suficientes monedas para crear esta misión");
+      }
+      user.coins -= coinsAmount;
+
+      const transaction = new Transaction({
+        userId: req.userId,
+        amount: -coinsAmount,
+        description: TransactionDescription.MISSION_CREATION,
+        type: TransactionType.OUTCOME,
+        date: new Date(),
+      });
+
+      await transaction.save();
+      await user.save();
+    }
+
+    const currentDate = new Date();
+    const mission = new Mission({
+      description,
+      details,
+      paymentType,
+      coinsAmount,
+      status: req.role === UserRole.ADMIN ? MissionStatus.PUBLISHED : MissionStatus.CREATED,
+      createdAt: currentDate,
+      createdBy: req.userId,
+    });
+
+    if (req.role === UserRole.ADMIN) {
+      mission.publishedAt = currentDate;
+    }
+
+    await mission.save();
+    res.status(200).send("Misión creada exitosamente");
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).send(error.errors);
+    } else {
+      console.error(error);
+      res.status(500).send("Error al crear la misión");
+    }
+  }
+}
