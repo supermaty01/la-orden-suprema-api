@@ -12,4 +12,8 @@ router.get("/admin", isAdmin, missionController.getAdminMissions);
 // Get mission by ID
 router.get("/:id", isAuthorized, missionController.getMissionById);
 
+// Update missions based on status
+router.put("/:id/publish", isAdmin, missionController.publishMission);
+router.put("/:id/reject", isAdmin, missionController.rejectMission);
+
 module.exports = router;

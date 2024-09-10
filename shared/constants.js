@@ -17,6 +17,7 @@ exports.TransactionDescription = {
   COIN_PURCHASE: 'Compra de monedas',
   INFORMATION_PURCHASE: 'Compra de información',
   MISSION_REWARD: 'Recompensa de misión',
+  MISSION_REJECTION: 'Devolución por rechazo de misión',
   MISSION_CREATION: 'Creación de misión',
 }
 
@@ -37,6 +38,7 @@ exports.MissionStatus = {
 
 exports.BloodDebtStatus = {
   PENDING: "PENDING",
+  REJECTED: "REJECTED",
   PAID: "PAID",
 }
 

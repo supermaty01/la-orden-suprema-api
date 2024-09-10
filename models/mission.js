@@ -8,7 +8,7 @@ const missionSchema = new mongoose.Schema({
   status: { type: String, required: true },
   createdAt: { type: Date, required: true },
   publishedAt: { type: Date, required: false },
-  declinedAt: { type: Date, required: false },
+  rejectedAt: { type: Date, required: false },
   assignedAt: { type: Date, required: false },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

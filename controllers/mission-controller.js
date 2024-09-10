@@ -190,7 +190,7 @@ exports.getMissionById = async (req, res) => {
           status: 1,
           createdAt: 1,
           publishedAt: 1,
-          declinedAt: 1,
+          rejectedAt: 1,
           assignedAt: 1,
         },
       },
@@ -205,5 +205,67 @@ exports.getMissionById = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al obtener la misión" });
+  }
+}
+
+exports.publishMission = async (req, res) => {
+  try {
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.CREATED) {
+      return res.status(400).json({ message: "La misión no puede ser publicada" });
+    }
+
+    mission.status = MissionStatus.PUBLISHED;
+    mission.publishedAt = new Date();
+    await mission.save();
+
+    res.status(200).json({ message: "Misión publicada exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al publicar la misión" });
+  }
+}
+
+exports.rejectMission = async (req, res) => {
+  try {
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.CREATED) {
+      return res.status(400).json({ message: "La misión no puede ser rechazada" });
+    }
+
+    mission.status = MissionStatus.REJECTED;
+    mission.rejectedAt = new Date();
+    await mission.save();
+
+    if (mission.paymentType === MissionPaymentType.COINS) {
+      const user = await User.findById(mission.createdBy);
+      user.coins += mission.coinsAmount;
+      const transaction = new Transaction({
+        userId: user._id,
+        amount: mission.coinsAmount,
+        description: TransactionDescription.MISSION_REJECTION,
+        type: TransactionType.INCOME,
+        date: new Date(),
+      });
+      await transaction.save();
+      await user.save();
+    } else if (mission.paymentType === MissionPaymentType.BLOOD_DEBT) {
+      const bloodDebt = await BloodDebt.findOne({ createdMission: mission._id });
+      bloodDebt.status = BloodDebtStatus.REJECTED;
+      await bloodDebt.save();
+    }
+
+    res.status(200).json({ message: "Misión rechazada exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al rechazar la misión" });
   }
 }
