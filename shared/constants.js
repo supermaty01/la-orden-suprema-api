@@ -35,6 +35,11 @@ exports.MissionStatus = {
   PAID: "PAID",
 }
 
+exports.BloodDebtStatus = {
+  PENDING: "PENDING",
+  PAID: "PAID",
+}
+
 exports.Configuration = {
   MONEY_PER_COIN: 10,
   INFORMATION_PRICE: 100,

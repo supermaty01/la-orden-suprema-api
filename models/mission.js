@@ -4,7 +4,7 @@ const missionSchema = new mongoose.Schema({
   description: { type: String, required: true },
   details: { type: String, required: true },
   paymentType: { type: String, required: true },
-  coinsAmount: { type: Number, required: true },
+  coinsAmount: { type: Number, required: false },
   status: { type: String, required: true },
   createdAt: { type: Date, required: true },
   publishedAt: { type: Date, required: false },

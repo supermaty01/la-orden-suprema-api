@@ -1,7 +1,8 @@
-const { MissionPaymentType, MissionStatus, UserRole, TransactionDescription, TransactionType } = require("../shared/constants");
+const { MissionPaymentType, MissionStatus, UserRole, TransactionDescription, TransactionType, BloodDebtStatus } = require("../shared/constants");
 const Mission = require("../models/mission");
 const User = require("../models/user");
 const Transaction = require("../models/transaction");
+const BloodDebt = require("../models/blood-debt");
 const z = require('zod');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
@@ -13,12 +14,16 @@ exports.createMission = async (req, res) => {
       details: z.string().min(3).max(500),
       paymentType: z.string(),
       coinsAmount: z.number().int().positive().optional(),
+      assignedTo: z.string().optional(),
     }).refine((data) => !(data.paymentType === MissionPaymentType.COINS && !data.coinsAmount), {
       message: "La cantidad de monedas es requerida para misiones con pago en monedas de asesino",
       path: ["coinsAmount"],
     }).refine((data) => !(data.paymentType !== MissionPaymentType.COINS && req.role === UserRole.ADMIN), {
       message: "Los administradores solo pueden crear misiones con pago en monedas de asesino",
       path: ["paymentType"],
+    }).refine((data) => !(data.paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION && !data.assignedTo), {
+      message: "El asesino asignado es requerido para misiones de cobro de deuda de sangre",
+      path: ["assignedTo"],
     });
     schema.parse(req.body);
 
@@ -27,7 +32,7 @@ exports.createMission = async (req, res) => {
     if (paymentType === MissionPaymentType.COINS) {
       const user = await User.findById(req.userId);
       if (user.coins < coinsAmount) {
-        return res.status(400).send("No tienes suficientes monedas para crear esta misión");
+        return res.status(400).json({ message: "No tienes suficientes monedas para crear esta misión" });
       }
       user.coins -= coinsAmount;
 
@@ -58,14 +63,25 @@ exports.createMission = async (req, res) => {
       mission.publishedAt = currentDate;
     }
 
-    await mission.save();
-    res.status(200).send("Misión creada exitosamente");
+    const newMission = await mission.save();
+
+    if (paymentType === MissionPaymentType.BLOOD_DEBT) {
+      const bloodDebt = new BloodDebt({
+        status: BloodDebtStatus.PENDING,
+        createdBy: req.userId,
+        createdMission: newMission._id,
+      });
+      await bloodDebt.save();
+    }
+
+
+    res.status(200).json({ message: "Misión creada exitosamente" });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).send(error.errors);
+      return res.status(400).json(error.errors);
     } else {
       console.error(error);
-      res.status(500).send("Error al crear la misión");
+      res.status(500).json({ message: "Error al crear la misión" });
     }
   }
 }
@@ -110,10 +126,10 @@ exports.getAdminMissions = async (req, res) => {
         },
       },
     ]);
-    res.status(200).send(missions);
+    res.status(200).json(missions);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al obtener las misiones");
+    res.status(500).json({ message: "Error al obtener las misiones" });
   }
 }
 
@@ -183,11 +199,11 @@ exports.getMissionById = async (req, res) => {
     const mission = missions[0];
 
     if (!mission) {
-      return res.status(404).send("Misión no encontrada");
+      return res.status(404).json({ message: "Misión no encontrada" });
     }
-    res.status(200).send(mission);
+    res.status(200).json(mission);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al obtener la misión");
+    res.status(500).json({ message: "Error al obtener la misión" });
   }
 }
