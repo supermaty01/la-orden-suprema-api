@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
       ref: 'User',
     },
   ],
+  profilePicture: { type: String, required: false },
 });
 
 //Export model

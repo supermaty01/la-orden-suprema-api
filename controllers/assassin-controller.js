@@ -6,6 +6,7 @@ const { UserRole, UserStatus, Configuration, TransactionDescription, Transaction
 const mailController = require('./mail-controller');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
+const { fileValidator } = require('../shared/validators');
 
 exports.createAssassin = async (req, res) => {
   try {
@@ -15,15 +16,19 @@ exports.createAssassin = async (req, res) => {
       alias: z.string({ required_error: "El pseudónimo es obligatorio" }),
       country: z.string({ required_error: "El país es obligatorio" }),
       address: z.string({ required_error: "La dirección es obligatoria" }),
+      profilePicture: fileValidator(),
     });
-    schema.parse(req.body);
 
-    const existingEmail = await User.findOne({ email: req.body.email.toLowerCase() });
+    schema.parse({ ...req.body, profilePicture: req.file });
+
+    const { email, name, alias, country, address } = req.body;
+
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.status(400).send("El email ya está en uso");
     }
 
-    const existingAlias = await User.findOne({ alias: req.body.alias });
+    const existingAlias = await User.findOne({ alias });
     if (existingAlias) {
       return res.status(400).send("El pseudónimo ya está en uso");
     }
@@ -33,13 +38,14 @@ exports.createAssassin = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
-      email: req.body.email.toLowerCase(),
-      name: req.body.name,
-      alias: req.body.alias,
-      country: req.body.country,
-      address: req.body.address,
+      name,
+      alias,
+      country,
+      address,
+      email: email.toLowerCase(),
       password: hashedPassword,
       role: UserRole.ASSASSIN,
+      profilePicture: req.file.buffer.toString('base64'),
     });
 
     await user.save();
