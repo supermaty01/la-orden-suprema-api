@@ -3,6 +3,8 @@ const Mission = require("../models/mission");
 const User = require("../models/user");
 const Transaction = require("../models/transaction");
 const z = require('zod');
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 exports.createMission = async (req, res) => {
   try {
@@ -112,5 +114,80 @@ exports.getAdminMissions = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error al obtener las misiones");
+  }
+}
+
+exports.getMissionById = async (req, res) => {
+  try {
+    const missions = await Mission.aggregate([
+      {
+        $match: {
+          _id: ObjectId.createFromHexString(req.params.id),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: "$createdBy",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedTo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$assignedTo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createdBy: {
+            _id: "$createdBy._id",
+            name: "$createdBy.name",
+          },
+          assignedTo: {
+            $cond: {
+              if: "$assignedTo",
+              then: {
+                _id: "$assignedTo._id",
+                name: "$assignedTo.name",
+              },
+              else: null,
+            },
+          },
+          description: 1,
+          details: 1,
+          paymentType: 1,
+          coinsAmount: 1,
+          status: 1,
+          createdAt: 1,
+          publishedAt: 1,
+          declinedAt: 1,
+          assignedAt: 1,
+        },
+      },
+    ]);
+
+    const mission = missions[0];
+
+    if (!mission) {
+      return res.status(404).send("Misión no encontrada");
+    }
+    res.status(200).send(mission);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al obtener la misión");
   }
 }
