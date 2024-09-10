@@ -1,13 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const missionController = require("../controllers/mission-controller");
-const { isAuthorized, isAdmin } = require("../shared/auth");
+const { isAuthorized, isAdmin, isAssassin } = require("../shared/auth");
 
 // Create a new mission
 router.post("/", isAuthorized, missionController.createMission);
 
 // Mission list for admins
 router.get("/admin", isAdmin, missionController.getAdminMissions);
+
+// Mission lists for assassins
+router.get("/general", isAssassin, missionController.getGeneralMissions);
+// router.get("/assigned", isAssassin, missionController.getAssassinMissions);
+// router.get("/created-by-me", isAssassin, missionController.getAssassinMissions);
 
 // Get mission by ID
 router.get("/:id", isAuthorized, missionController.getMissionById);
