@@ -15,6 +15,7 @@ exports.TransactionType = {
 
 exports.TransactionDescription = {
   COIN_PURCHASE: 'Compra de monedas',
+  COIN_SELL: 'Venta de monedas',
   INFORMATION_PURCHASE: 'Compra de información',
   MISSION_REWARD: 'Recompensa de misión',
   MISSION_REJECTION: 'Devolución por rechazo de misión',

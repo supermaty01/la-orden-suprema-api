@@ -6,7 +6,8 @@ const { TransactionDescription, TransactionType } = require("../shared/constants
 exports.listTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({ userId: req.userId }, { _id: 0, userId: 0, __v: 0 }).sort({ date: -1 });
-    res.status(200).json(transactions);
+    const user = await User.findById(req.userId);
+    res.status(200).json({ transactions, coins: user.coins });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al listar las transacciones" });
@@ -37,6 +38,37 @@ exports.buyCoins = async (req, res) => {
     } else {
       console.error(error);
       res.status(500).json({ message: "Error al comprar monedas" });
+    }
+  }
+}
+
+exports.sellCoins = async (req, res) => {
+  try {
+    const schema = z.object({
+      coins: z.number().positive(),
+    });
+    schema.parse(req.body);
+    const user = await User.findById(req.userId);
+    if (user.coins < req.body.coins) {
+      return res.status(400).json({ message: "No cuentas con suficientes monedas para vender" });
+    }
+    user.coins -= req.body.coins;
+    const transaction = new Transaction({
+      userId: req.userId,
+      amount: -req.body.coins,
+      description: TransactionDescription.COIN_SELL,
+      type: TransactionType.OUTCOME,
+      date: new Date(),
+    });
+    await user.save();
+    await transaction.save();
+    res.status(200).json({ message: "Monedas vendidas exitosamente" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    } else {
+      console.error(error);
+      res.status(500).json({ message: "Error al vender monedas" });
     }
   }
 }
