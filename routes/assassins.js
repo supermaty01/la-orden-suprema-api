@@ -15,4 +15,7 @@ router.get("/", isAuthorized, assassinController.listAssassins);
 // Purchase assassin information
 router.put("/purchase-information", isAssassin, assassinController.purchaseAssassinInformation);
 
+// Get assassin by ID
+router.get("/:id", isAuthorized, assassinController.getAssassinById);
+
 module.exports = router;

@@ -200,3 +200,69 @@ exports.purchaseAssassinInformation = async (req, res) => {
     res.status(500).json({ message: "Error al comprar la información del asesino" });
   }
 }
+
+exports.getAssassinById = async (req, res) => {
+  try {
+    const schema = z.object({
+      id: z.string({ required_error: "El ID del asesino es obligatorio" }),
+    });
+    schema.parse(req.params);
+
+    let project = {
+      _id: 1,
+      name: 1,
+      alias: 1,
+      country: 1,
+      address: 1,
+      email: 1,
+      coins: 1,
+      status: 1,
+      profilePicture: 1,
+    };
+
+    if (req.role === UserRole.ASSASSIN) {
+      const user = await User.findById(req.userId);
+      if (!user.assassinInformationBought.includes(req.params.id)) {
+        return res.status(400).json({ message: "No has comprado la información de este asesino" });
+      }
+      project = {
+        _id: 1,
+        name: 1,
+        alias: 1,
+        country: 1,
+        address: 1,
+        profilePicture: 1,
+      }
+    }
+
+    const assassin = await User.aggregate([
+      {
+        $match: {
+          _id: ObjectId.createFromHexString(req.params.id),
+        },
+      },
+      {
+        $lookup: {
+          from: "files",
+          localField: "profilePictureId",
+          foreignField: "_id",
+          as: "profilePicture",
+        },
+      },
+      {
+        $unwind: "$profilePicture",
+      },
+      {
+        $project: project,
+      },
+    ]);
+
+    return res.status(200).json(assassin[0]);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener el asesino" });
+  }
+}
