@@ -88,6 +88,14 @@ exports.createMission = async (req, res) => {
 
 exports.getAdminMissions = async (req, res) => {
   try {
+    const filters = {};
+    if (req.query.createdBy) {
+      filters.createdBy = { $regex: req.query.createdBy, $options: 'i' };
+    }
+    if (req.query.status) {
+      filters.status = req.query.status;
+    }
+
     const missions = await Mission.aggregate([
       {
         $lookup: {
@@ -124,6 +132,9 @@ exports.getAdminMissions = async (req, res) => {
           description: 1,
           status: 1,
         },
+      },
+      {
+        $match: filters,
       },
     ]);
     res.status(200).json(missions);
