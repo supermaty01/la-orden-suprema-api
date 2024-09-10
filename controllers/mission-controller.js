@@ -271,17 +271,23 @@ exports.getMissionById = async (req, res) => {
       {
         $project: {
           _id: 1,
-          createdBy: {
+          createdBy: req.role === UserRole.ADMIN ? {
             _id: "$createdBy._id",
             name: "$createdBy.name",
+          } : {
+            $cond: {
+              if: { $eq: ["$createdBy.role", UserRole.ADMIN] },
+              then: { $literal: "Administrador de la orden" },
+              else: "$createdBy.alias",
+            }
           },
           assignedTo: {
             $cond: {
               if: "$assignedTo",
-              then: {
+              then: req.role === UserRole.ADMIN ? {
                 _id: "$assignedTo._id",
                 name: "$assignedTo.name",
-              },
+              } : "$assignedTo.alias",
               else: null,
             },
           },
