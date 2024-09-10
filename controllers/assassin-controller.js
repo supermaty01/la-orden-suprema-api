@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
+const FileModel = require('../models/file');
 const bcrypt = require('bcrypt');
 const z = require('zod');
 const { UserRole, UserStatus, Configuration, TransactionDescription, TransactionType } = require('../shared/constants');
@@ -37,6 +38,9 @@ exports.createAssassin = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const file = new FileModel(req.file);
+    const savedFile = await file.save();
+
     const user = new User({
       name,
       alias,
@@ -45,7 +49,7 @@ exports.createAssassin = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: UserRole.ASSASSIN,
-      profilePicture: req.file.buffer.toString('base64'),
+      profilePictureId: savedFile._id,
     });
 
     await user.save();

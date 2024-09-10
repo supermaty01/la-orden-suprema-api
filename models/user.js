@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { UserStatus } = require('../shared/constants');
+const File = require('./file');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -20,7 +21,7 @@ const userSchema = new mongoose.Schema({
       ref: 'User',
     },
   ],
-  profilePicture: { type: String, required: false },
+  profilePictureId: { type: mongoose.Schema.Types.ObjectId, ref: 'File', required: false },
 });
 
 //Export model
