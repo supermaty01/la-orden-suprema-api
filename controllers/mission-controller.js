@@ -187,6 +187,54 @@ exports.getGeneralMissions = async (req, res) => {
   }
 }
 
+exports.getAssignedMissions = async (req, res) => {
+  try {
+    const filters = {
+      assignedTo: ObjectId.createFromHexString(req.userId),
+    };
+
+    if (req.query.status) {
+      filters.status = req.query.status;
+    }
+
+    const missions = await Mission.aggregate([
+      {
+        $match: filters,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: "$createdBy",
+      },
+      {
+        $project: {
+          _id: 1,
+          createdBy: {
+            $cond: {
+              if: { $eq: ["$createdBy.role", UserRole.ADMIN] },
+              then: { $literal: "Administrador de la orden" },
+              else: "$createdBy.alias",
+            },
+          },
+          description: 1,
+          status: 1,
+        },
+      },
+    ]);
+    res.status(200).json(missions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener las misiones" });
+  }
+}
+
+
 exports.getMissionById = async (req, res) => {
   try {
     const missions = await Mission.aggregate([
