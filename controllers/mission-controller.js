@@ -234,7 +234,6 @@ exports.getAssignedMissions = async (req, res) => {
   }
 }
 
-
 exports.getMissionById = async (req, res) => {
   try {
     const missions = await Mission.aggregate([
@@ -375,5 +374,42 @@ exports.rejectMission = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al rechazar la misión" });
+  }
+}
+
+exports.assignMission = async (req, res) => {
+  try {
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.PUBLISHED) {
+      return res.status(400).json({ message: "La misión no puede ser asignada" });
+    }
+
+    if (mission.createdBy.toString() === req.userId) {
+      return res.status(400).json({ message: "No puedes asignarte una misión que creaste" });
+    }
+
+    if (mission.paymentType === MissionPaymentType.BLOOD_DEBT) {
+      const bloodDebt = await BloodDebt.findOne({ createdMission: mission._id });
+      if (bloodDebt.status !== BloodDebtStatus.PENDING) {
+        return res.status(400).json({ message: "La misión no puede ser asignada" });
+      }
+      bloodDebt.status = BloodDebtStatus.ASSIGNED;
+      bloodDebt.assignedTo = req.userId;
+      await bloodDebt.save();
+    }
+
+    mission.status = MissionStatus.ASSIGNED;
+    mission.assignedTo = req.userId;
+    mission.assignedAt = new Date();
+
+    await mission.save();
+    res.status(200).json({ message: "Misión asignada exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al asignar la misión" });
   }
 }

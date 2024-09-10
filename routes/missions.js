@@ -21,4 +21,6 @@ router.get("/:id", isAuthorized, missionController.getMissionById);
 router.put("/:id/publish", isAdmin, missionController.publishMission);
 router.put("/:id/reject", isAdmin, missionController.rejectMission);
 
+router.put("/:id/assign", isAssassin, missionController.assignMission);
+
 module.exports = router;

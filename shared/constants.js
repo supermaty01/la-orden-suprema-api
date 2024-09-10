@@ -38,8 +38,11 @@ exports.MissionStatus = {
 
 exports.BloodDebtStatus = {
   PENDING: "PENDING",
+  ASSIGNED: "ASSIGNED",
   REJECTED: "REJECTED",
-  PAID: "PAID",
+  COMPLETED: "COMPLETED", // Se completó la misión inicial la cual generó la deuda de sangre
+  PENDING_PAYMENT_APPROVAL: "PENDING_PAYMENT_APPROVAL", // Se creó una misión para pagar la deuda de sangre
+  PAID: "PAID", // Se publicó la misión para pagar la deuda de sangre (finaliza el flujo)
 }
 
 exports.Configuration = {
