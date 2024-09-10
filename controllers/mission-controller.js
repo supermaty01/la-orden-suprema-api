@@ -67,3 +67,50 @@ exports.createMission = async (req, res) => {
     }
   }
 }
+
+exports.getAdminMissions = async (req, res) => {
+  try {
+    const missions = await Mission.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: "$createdBy",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedTo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$assignedTo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createdBy: "$createdBy.name",
+          assignedTo: {
+            $ifNull: ["$assignedTo.name", ""],
+          },
+          description: 1,
+          status: 1,
+        },
+      },
+    ]);
+    res.status(200).send(missions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al obtener las misiones");
+  }
+}
