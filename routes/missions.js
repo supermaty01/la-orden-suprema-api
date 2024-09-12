@@ -26,6 +26,6 @@ router.put("/:id/assign", isAssassin, missionController.assignMission);
 router.put("/:id/complete", isAssassin, uploadFile('evidence'), missionController.completeMission);
 
 router.put("/:id/pay", isAuthorized, missionController.payMission);
-//router.put("/:id/reject-evidence", isAuthorized, missionController.assignMission);
+router.put("/:id/reject-evidence", isAuthorized, missionController.rejectMissionEvidence);
 
 module.exports = router;

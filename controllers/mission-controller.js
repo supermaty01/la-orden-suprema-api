@@ -560,3 +560,35 @@ exports.payMission = async (req, res) => {
     res.status(500).json({ message: "Error al pagar la misión" });
   }
 }
+
+exports.rejectMissionEvidence = async (req, res) => {
+  try {
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.COMPLETED) {
+      return res.status(400).json({ message: "La evidencia de la misión no puede ser rechazada" });
+    }
+
+    if (mission.createdBy.toString() !== req.userId) {
+      return res.status(400).json({ message: "No puedes rechazar la evidencia de una misión que no creaste" });
+    }
+
+    const file = await FileModel.findById(mission.evidenceId);
+    if (!file) {
+      return res.status(404).json({ message: "Evidencia no encontrada" });
+    }
+
+    await FileModel.findByIdAndDelete(mission.evidenceId);
+    mission.evidenceId = null;
+    mission.status = MissionStatus.ASSIGNED;
+    await mission.save();
+    res.status(200).json({ message: "Evidencia rechazada exitosamente" });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al rechazar la evidencia" });
+  }
+}
