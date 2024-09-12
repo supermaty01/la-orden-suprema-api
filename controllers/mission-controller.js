@@ -29,7 +29,9 @@ exports.createMission = async (req, res) => {
     });
     schema.parse(req.body);
 
-    const { description, details, paymentType, coinsAmount } = req.body;
+    const { description, details, paymentType, coinsAmount, assignedTo } = req.body;
+
+    let bloodDebt;
 
     if (paymentType === MissionPaymentType.COINS) {
       const user = await User.findById(req.userId);
@@ -48,6 +50,11 @@ exports.createMission = async (req, res) => {
 
       await transaction.save();
       await user.save();
+    } else if (paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      bloodDebt = await BloodDebt.findOne({ createdBy: assignedTo, paidTo: req.userId, status: BloodDebtStatus.PAID_INITIAL_MISSION });
+      if (!bloodDebt) {
+        return res.status(400).json({ message: "No tienes una deuda de sangre pendiente con este asesino" });
+      }
     }
 
     const currentDate = new Date();
@@ -65,6 +72,10 @@ exports.createMission = async (req, res) => {
       mission.publishedAt = currentDate;
     }
 
+    if (paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      mission.assignedTo = assignedTo;
+    }
+
     const newMission = await mission.save();
 
     if (paymentType === MissionPaymentType.BLOOD_DEBT) {
@@ -73,6 +84,10 @@ exports.createMission = async (req, res) => {
         createdBy: req.userId,
         createdMission: newMission._id,
       });
+      await bloodDebt.save();
+    } else if (paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      bloodDebt.paidMission = newMission._id;
+      bloodDebt.status = BloodDebtStatus.PENDING_COLLECTION_APPROVAL;
       await bloodDebt.save();
     }
 
@@ -197,6 +212,8 @@ exports.getAssignedMissions = async (req, res) => {
 
     if (req.query.status) {
       filters.status = req.query.status;
+    } else {
+      filters.status = { $in: [MissionStatus.ASSIGNED, MissionStatus.COMPLETED, MissionStatus.PAID] };
     }
 
     const missions = await Mission.aggregate([
@@ -388,9 +405,22 @@ exports.publishMission = async (req, res) => {
     if (mission.status !== MissionStatus.CREATED) {
       return res.status(400).json({ message: "La misión no puede ser publicada" });
     }
+    const currentDate = new Date();
 
     mission.status = MissionStatus.PUBLISHED;
-    mission.publishedAt = new Date();
+    mission.publishedAt = currentDate;
+    if (mission.paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      const bloodDebt = await BloodDebt.findOne({ paidMission: mission._id });
+      if (!bloodDebt) {
+        return res.status(400).json({ message: "La misión no puede ser publicada" });
+      }
+      bloodDebt.status = BloodDebtStatus.COMPLETED;
+      mission.status = MissionStatus.ASSIGNED;
+      mission.assignedAt = currentDate;
+
+      await bloodDebt.save();
+    }
+
     await mission.save();
 
     res.status(200).json({ message: "Misión publicada exitosamente" });
@@ -430,6 +460,11 @@ exports.rejectMission = async (req, res) => {
     } else if (mission.paymentType === MissionPaymentType.BLOOD_DEBT) {
       const bloodDebt = await BloodDebt.findOne({ createdMission: mission._id });
       bloodDebt.status = BloodDebtStatus.REJECTED;
+      await bloodDebt.save();
+    } else if (mission.paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      const bloodDebt = await BloodDebt.findOne({ paidMission: mission._id });
+      bloodDebt.status = BloodDebtStatus.PAID_INITIAL_MISSION;
+      bloodDebt.paidMission = null;
       await bloodDebt.save();
     }
 
@@ -549,6 +584,13 @@ exports.payMission = async (req, res) => {
       });
       await transaction.save();
       await user.save();
+    } else if (mission.paymentType === MissionPaymentType.BLOOD_DEBT_COLLECTION) {
+      const bloodDebt = await BloodDebt.findOne({ paidMission: mission._id });
+      if (bloodDebt.status !== BloodDebtStatus.COMPLETED) {
+        return res.status(400).json({ message: "La misión no puede ser pagada" });
+      }
+      bloodDebt.status = BloodDebtStatus.PAID;
+      await bloodDebt.save();
     }
 
     mission.status = MissionStatus.PAID;
