@@ -98,6 +98,10 @@ exports.updateAssassin = async (req, res) => {
       const file = new FileModel(req.file);
       const savedFile = await file.save();
 
+      if (user.profilePictureId) {
+        await FileModel.findByIdAndDelete(user.profilePictureId);
+      }
+
       user.profilePictureId = savedFile._id;
     }
 
