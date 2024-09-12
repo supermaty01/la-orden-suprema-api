@@ -4,6 +4,7 @@ const z = require('zod');
 const jwt = require('jsonwebtoken');
 const mailController = require('./mail-controller');
 const { UserStatus } = require('../shared/constants');
+const crypto = require('crypto');
 
 exports.login = async (req, res) => {
   try {
@@ -76,9 +77,12 @@ exports.forgotPasswordCode = async (req, res) => {
     if (user.resetPasswordCode !== req.body.code) {
       return res.status(400).json({ message: "El código no es válido" });
     }
-    user.pendingReset = true;
+    const token = crypto.randomBytes(32).toString('hex');
+
+    user.resetPasswordToken = await bcrypt.hash(token, 10);
+    user.resetPasswordCode = null;
     await user.save();
-    res.status(200).json({ message: "Código de recuperación de contraseña correcto" });
+    res.status(200).json({ message: "Código de recuperación de contraseña correcto", resetToken: token });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json(error.errors);
@@ -94,18 +98,23 @@ exports.forgotPasswordReset = async (req, res) => {
     const schema = z.object({
       email: z.string().email(),
       password: z.string().min(8),
+      token: z.string(),
     });
     schema.parse(req.body);
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
       return res.status(400).json({ message: "El email no se encuentra registrado" });
     }
-    if (!user.pendingReset) {
+    if (!user.resetPasswordToken) {
       return res.status(400).json({ message: "No se ha solicitado la recuperación de contraseña" });
+    }
+    const validToken = await bcrypt.compare(req.body.token, user.resetPasswordToken);
+    if (!validToken) {
+      return res.status(400).json({ message: "El token no es válido" });
     }
     user.password = await bcrypt.hash(req.body.password, 10);
     user.resetPasswordCode = null;
-    user.pendingReset = false;
+    user.resetPasswordToken = null;
     await user.save();
     res.status(200).json({ message: "Contraseña actualizada correctamente" });
   }

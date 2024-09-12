@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   resetPasswordCode: { type: String, default: null, required: false },
-  pendingReset: { type: Boolean, default: false, required: false },
+  resetPasswordToken: { type: String, required: false },
   role: { type: String, required: true },
   coins: { type: Number, default: 0, required: true },
   // Assassin fields
