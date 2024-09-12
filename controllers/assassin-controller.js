@@ -90,6 +90,10 @@ exports.updateAssassin = async (req, res) => {
 
     const user = await User.findById(req.params.id);
 
+    if (!user) {
+      return res.status(400).json({ message: "Usuario no encontrado" });
+    }
+
     if (req.file) {
       const file = new FileModel(req.file);
       const savedFile = await file.save();
@@ -114,6 +118,32 @@ exports.updateAssassin = async (req, res) => {
   }
 }
 
+exports.updateAssassinStatus = async (req, res) => {
+  try {
+    const schema = z.object({
+      status: z.string({ required_error: "El estado es obligatorio" })
+        .refine((status) => Object.values(UserStatus).includes(status), { message: "Estado inválido" }),
+    });
+
+    schema.parse(req.body);
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(400).json({ message: "Usuario no encontrado" });
+    }
+
+    user.status = req.body.status;
+    await user.save();
+
+    res.status(201).json({ message: "Estado del asesino actualizado exitosamente" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar el estado del asesino" });
+  }
+}
 
 exports.listAssassins = async (req, res) => {
   try {
