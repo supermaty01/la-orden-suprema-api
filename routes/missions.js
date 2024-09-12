@@ -13,7 +13,7 @@ router.get("/admin", isAdmin, missionController.getAdminMissions);
 // Mission lists for assassins
 router.get("/general", isAssassin, missionController.getGeneralMissions);
 router.get("/assigned", isAssassin, missionController.getAssignedMissions);
-// router.get("/created-by-me", isAssassin, missionController.getAssassinMissions);
+router.get("/created-by-me", isAssassin, missionController.getMissionsCreatedByMe);
 
 // Get mission by ID
 router.get("/:id", isAuthorized, missionController.getMissionById);

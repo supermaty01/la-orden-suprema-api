@@ -236,6 +236,50 @@ exports.getAssignedMissions = async (req, res) => {
   }
 }
 
+exports.getMissionsCreatedByMe = async (req, res) => {
+  try {
+    const filters = {
+      createdBy: ObjectId.createFromHexString(req.userId),
+    };
+
+    if (req.query.status) {
+      filters.status = req.query.status;
+    }
+
+    const missions = await Mission.aggregate([
+      {
+        $match: filters,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assignedTo",
+          foreignField: "_id",
+          as: "assignedTo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$assignedTo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          assignedTo: "$assignedTo.alias",
+          description: 1,
+          status: 1,
+        },
+      },
+    ]);
+    res.status(200).json(missions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener las misiones" });
+  }
+}
+
 exports.getMissionById = async (req, res) => {
   try {
     const missions = await Mission.aggregate([
