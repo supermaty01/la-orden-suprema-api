@@ -4,6 +4,7 @@ const indexRouter = require('./routes/index');
 const assassinsRouter = require('./routes/assassins');
 const transactionsRouter = require('./routes/transactions');
 const missionsRouter = require('./routes/missions');
+const bloodDebtRouter = require('./routes/blood-debts');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
@@ -26,3 +27,4 @@ app.use('/admins', adminsRouter);
 app.use('/assassins', assassinsRouter);
 app.use('/transactions', transactionsRouter);
 app.use('/missions', missionsRouter);
+app.use('/blood-debts', bloodDebtRouter);

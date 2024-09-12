@@ -461,7 +461,7 @@ exports.assignMission = async (req, res) => {
         return res.status(400).json({ message: "La misión no puede ser asignada" });
       }
       bloodDebt.status = BloodDebtStatus.ASSIGNED;
-      bloodDebt.assignedTo = req.userId;
+      bloodDebt.paidTo = req.userId;
       await bloodDebt.save();
     }
 
