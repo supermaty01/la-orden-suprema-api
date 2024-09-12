@@ -314,6 +314,20 @@ exports.getMissionById = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "files",
+          localField: "evidenceId",
+          foreignField: "_id",
+          as: "evidence",
+        },
+      },
+      {
+        $unwind: {
+          path: "$evidence",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $project: {
           _id: 1,
           createdBy: req.role === UserRole.ADMIN ? {
@@ -345,6 +359,7 @@ exports.getMissionById = async (req, res) => {
           publishedAt: 1,
           rejectedAt: 1,
           assignedAt: 1,
+          evidence: 1,
         },
       },
     ]);
