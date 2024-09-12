@@ -10,6 +10,8 @@ const missionSchema = new mongoose.Schema({
   publishedAt: { type: Date, required: false },
   rejectedAt: { type: Date, required: false },
   assignedAt: { type: Date, required: false },
+  completedAt: { type: Date, required: false },
+  paidAt: { type: Date, required: false },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

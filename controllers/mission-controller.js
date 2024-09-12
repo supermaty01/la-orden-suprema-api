@@ -359,6 +359,8 @@ exports.getMissionById = async (req, res) => {
           publishedAt: 1,
           rejectedAt: 1,
           assignedAt: 1,
+          completedAt: 1,
+          paidAt: 1,
           evidence: 1,
         },
       },
@@ -510,5 +512,51 @@ exports.completeMission = async (req, res) => {
     }
     console.error(error);
     res.status(500).json({ message: "Error al completar la misión" });
+  }
+}
+
+exports.payMission = async (req, res) => {
+  try {
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.COMPLETED) {
+      return res.status(400).json({ message: "La misión no puede ser pagada" });
+    }
+
+    if (mission.createdBy.toString() !== req.userId) {
+      return res.status(400).json({ message: "No puedes pagar una misión que no creaste" });
+    }
+
+    if (mission.paymentType === MissionPaymentType.BLOOD_DEBT) {
+      const bloodDebt = await BloodDebt.findOne({ createdMission: mission._id });
+      if (bloodDebt.status !== BloodDebtStatus.ASSIGNED) {
+        return res.status(400).json({ message: "La misión no puede ser pagada" });
+      }
+      bloodDebt.status = BloodDebtStatus.PAID_INITIAL_MISSION;
+      await bloodDebt.save();
+    } else if (mission.paymentType === MissionPaymentType.COINS) {
+      const user = await User.findById(mission.assignedTo);
+      user.coins += mission.coinsAmount;
+      const transaction = new Transaction({
+        userId: user._id,
+        amount: mission.coinsAmount,
+        description: TransactionDescription.MISSION_REWARD,
+        type: TransactionType.INCOME,
+        date: new Date(),
+      });
+      await transaction.save();
+      await user.save();
+    }
+
+    mission.status = MissionStatus.PAID;
+    mission.paidAt = new Date();
+    await mission.save();
+    res.status(200).json({ message: "Misión pagada exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al pagar la misión" });
   }
 }

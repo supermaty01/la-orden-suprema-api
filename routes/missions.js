@@ -18,11 +18,14 @@ router.get("/created-by-me", isAssassin, missionController.getMissionsCreatedByM
 // Get mission by ID
 router.get("/:id", isAuthorized, missionController.getMissionById);
 
-// Update missions based on status
+// Update missions based on status (order of routes follows the flow of the mission)
 router.put("/:id/publish", isAdmin, missionController.publishMission);
 router.put("/:id/reject", isAdmin, missionController.rejectMission);
 
 router.put("/:id/assign", isAssassin, missionController.assignMission);
 router.put("/:id/complete", isAssassin, uploadFile('evidence'), missionController.completeMission);
+
+router.put("/:id/pay", isAuthorized, missionController.payMission);
+//router.put("/:id/reject-evidence", isAuthorized, missionController.assignMission);
 
 module.exports = router;
