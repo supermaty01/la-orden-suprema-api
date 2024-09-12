@@ -2,12 +2,13 @@ const express = require("express");
 const router = express.Router();
 const assassinController = require("../controllers/assassin-controller");
 const { isAdmin, isAuthorized, isAssassin } = require("../shared/auth");
-const multer = require('multer');
+const { uploadFile } = require("../controllers/file-controller");
 
 // Create a new assassin
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-router.post("/", isAdmin, upload.single('profilePicture'), assassinController.createAssassin);
+router.post("/", isAdmin, uploadFile('profilePicture'), assassinController.createAssassin);
+
+// Update an assassin
+router.put("/:id", isAuthorized, uploadFile('profilePicture'), assassinController.updateAssassin);
 
 // List assassins
 router.get("/", isAuthorized, assassinController.listAssassins);

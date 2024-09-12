@@ -69,6 +69,52 @@ exports.createAssassin = async (req, res) => {
   }
 }
 
+exports.updateAssassin = async (req, res) => {
+  try {
+    const schema = z.object({
+      name: z.string({ required_error: "El nombre es obligatorio" }),
+      alias: z.string({ required_error: "El pseudónimo es obligatorio" }),
+      country: z.string({ required_error: "El país es obligatorio" }),
+      address: z.string({ required_error: "La dirección es obligatoria" }),
+      profilePicture: fileValidator().optional(),
+    });
+
+    schema.parse({ ...req.body, profilePicture: req.file });
+
+    const { name, alias, country, address } = req.body;
+
+    const existingAlias = await User.findOne({ alias, _id: { $ne: ObjectId.createFromHexString(req.params.id) } });
+    if (existingAlias) {
+      return res.status(400).json({ message: "El pseudónimo ya está en uso" });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (req.file) {
+      const file = new FileModel(req.file);
+      const savedFile = await file.save();
+
+      user.profilePictureId = savedFile._id;
+    }
+
+    user.name = name;
+    user.alias = alias;
+    user.country = country;
+    user.address = address;
+
+    await user.save();
+
+    res.status(201).json({ message: "Asesino actualizado exitosamente" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar el asesino" });
+  }
+}
+
+
 exports.listAssassins = async (req, res) => {
   try {
     const filters = {
