@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user-controller");
 const { isAuthorized } = require("../shared/auth");
-const { Countries } = require("../shared/constants");
+const { Countries, Configuration } = require("../shared/constants");
 
 // Login route
 router.post("/login", userController.login);
@@ -15,6 +15,10 @@ router.post("/forgot-password/reset", userController.forgotPasswordReset);
 // General routes
 router.get("/countries", isAuthorized, (req, res) => {
   res.status(200).json(Countries);
+});
+
+router.get("/configuration", isAuthorized, (req, res) => {
+  res.status(200).json(Configuration);
 });
 
 module.exports = router;
