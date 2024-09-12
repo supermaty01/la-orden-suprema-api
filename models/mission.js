@@ -20,6 +20,7 @@ const missionSchema = new mongoose.Schema({
     ref: 'User',
     required: false,
   },
+  evidenceId: { type: mongoose.Schema.Types.ObjectId, ref: 'File', required: false },
 });
 
 //Export model

@@ -2,8 +2,10 @@ const { MissionPaymentType, MissionStatus, UserRole, TransactionDescription, Tra
 const Mission = require("../models/mission");
 const User = require("../models/user");
 const Transaction = require("../models/transaction");
+const FileModel = require('../models/file');
 const BloodDebt = require("../models/blood-debt");
 const z = require('zod');
+const { fileValidator } = require('../shared/validators');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 
@@ -411,5 +413,43 @@ exports.assignMission = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al asignar la misión" });
+  }
+}
+
+exports.completeMission = async (req, res) => {
+  try {
+    const schema = z.object({
+      evidence: fileValidator(),
+    });
+
+    schema.parse({ evidence: req.file });
+
+    const mission = await Mission.findById(req.params.id);
+    if (!mission) {
+      return res.status(404).json({ message: "Misión no encontrada" });
+    }
+
+    if (mission.status !== MissionStatus.ASSIGNED) {
+      return res.status(400).json({ message: "La misión no puede ser completada" });
+    }
+
+    if (mission.assignedTo.toString() !== req.userId) {
+      return res.status(400).json({ message: "No puedes completar una misión que no tienes asignada" });
+    }
+
+    const file = new FileModel(req.file);
+    const savedFile = await file.save();
+
+    mission.status = MissionStatus.COMPLETED;
+    mission.evidenceId = savedFile._id;
+
+    await mission.save();
+    res.status(200).json({ message: "Misión completada exitosamente" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
+    console.error(error);
+    res.status(500).json({ message: "Error al completar la misión" });
   }
 }

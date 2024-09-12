@@ -6,8 +6,12 @@ exports.fileValidator = () =>
   z.object({
     size: z
       .number()
-      .max(MAX_FILE_SIZE, `El tamaño máximo de archivo es ${MAX_FILE_SIZE / (1024 * 1024)}MB.`),
+      .max(MAX_FILE_SIZE, `El tamaño máximo de archivo es ${MAX_FILE_SIZE / (1024 * 1024)}MB.`)
+      .optional(),
     mimetype: z
       .string()
-      .refine((mimetype) => ACCEPTED_IMAGE_TYPES.includes(mimetype), `Solo los formatos ${ACCEPTED_IMAGE_TYPES.join(", ")} son válidos.`),
-  });
+      .refine((mimetype) => ACCEPTED_IMAGE_TYPES.includes(mimetype), `Solo los formatos ${ACCEPTED_IMAGE_TYPES.join(", ")} son válidos.`)
+      .optional(),
+  }).refine((file) => file.size && file.mimetype, {
+    message: "El archivo es requerido.",
+  });;
