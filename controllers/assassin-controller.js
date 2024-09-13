@@ -249,13 +249,14 @@ exports.purchaseAssassinInformation = async (req, res) => {
     const schema = z.object({
       assassinId: z.string({ required_error: "El ID del asesino al cual se le desea comprar la información es obligatorio" }),
     });
-    schema.parse(req.body);
+    schema.parse({ assassinId: req.params.id });
 
-    if (req.body.assassinId === req.userId) {
+    const assassinId = req.params.id;
+    if (assassinId === req.userId) {
       return res.status(400).json({ message: "No puedes comprar tu propia información" });
     }
 
-    if (user.assassinInformationBought.includes(req.body.assassinId)) {
+    if (user.assassinInformationBought.includes(assassinId)) {
       return res.status(400).json({ message: "Ya has comprado la información de este asesino" });
     }
 
@@ -263,7 +264,7 @@ exports.purchaseAssassinInformation = async (req, res) => {
       return res.status(400).json({ message: "No cuentas con suficientes monedas para comprar la información del asesino" });
     }
 
-    user.assassinInformationBought.push(req.body.assassinId);
+    user.assassinInformationBought.push(assassinId);
     user.coins -= Configuration.INFORMATION_PRICE;
 
     const transaction = new Transaction({
@@ -278,6 +279,9 @@ exports.purchaseAssassinInformation = async (req, res) => {
 
     res.status(200).json({ message: "Información del asesino comprada exitosamente" });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al comprar la información del asesino" });
   }

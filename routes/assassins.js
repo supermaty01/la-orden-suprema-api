@@ -17,7 +17,7 @@ router.put("/:id/status", isAdmin, assassinController.updateAssassinStatus);
 router.get("/", isAuthorized, assassinController.listAssassins);
 
 // Purchase assassin information
-router.put("/purchase-information", isAssassin, assassinController.purchaseAssassinInformation);
+router.put("/:id/purchase-information", isAssassin, assassinController.purchaseAssassinInformation);
 
 // Get assassin information
 router.get("/:id", isAuthorized, assassinController.getAssassinById);
