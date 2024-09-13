@@ -7,6 +7,10 @@ const { uploadFile } = require("../controllers/file-controller");
 // Create a new assassin
 router.post("/", isAdmin, uploadFile('profilePicture'), assassinController.createAssassin);
 
+// Assassin profile
+router.get("/me", isAssassin, assassinController.getAssassinProfile);
+router.put("/me", isAssassin, uploadFile('profilePicture'), assassinController.updateAssassinProfile);
+
 // Update an assassin
 router.put("/:id", isAdmin, uploadFile('profilePicture'), assassinController.updateAssassin);
 
