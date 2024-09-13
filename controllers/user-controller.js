@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const mailController = require('./mail-controller');
 const { UserStatus } = require('../shared/constants');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 exports.login = async (req, res) => {
   try {
@@ -124,5 +126,93 @@ exports.forgotPasswordReset = async (req, res) => {
     }
     console.error(error);
     res.status(500).json({ message: "Error al actualizar la contraseña" });
+  }
+}
+
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.aggregate([
+      {
+        $match: {
+          _id: ObjectId.createFromHexString(req.userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "files",
+          localField: "profilePictureId",
+          foreignField: "_id",
+          as: "profilePicture",
+        },
+      },
+      {
+        $unwind: {
+          path: "$profilePicture",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          alias: 1,
+          country: 1,
+          address: 1,
+          email: 1,
+          role: 1,
+          profilePicture: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(user[0]);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener el perfil del usuario" });
+  }
+}
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const schema = z.object({
+      country: z.string({ required_error: "El país es obligatorio" }),
+      address: z.string({ required_error: "La dirección es obligatoria" }),
+      profilePicture: fileValidator().optional(),
+    });
+
+    schema.parse({ ...req.body, profilePicture: req.file });
+
+    const { country, address } = req.body;
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(400).json({ message: "Usuario no encontrado" });
+    }
+
+    if (req.file) {
+      const file = new FileModel(req.file);
+      const savedFile = await file.save();
+
+      if (user.profilePictureId) {
+        await FileModel.findByIdAndDelete(user.profilePictureId);
+      }
+
+      user.profilePictureId = savedFile._id;
+    }
+
+    user.country = country;
+    user.address = address;
+
+    await user.save();
+
+    res.status(201).json({ message: "Perfil actualizado exitosamente" });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar el perfil" });
   }
 }

@@ -1,11 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user-controller");
-const { isAuthorized } = require("../shared/auth");
+const { isAuthorized, isAssassin } = require("../shared/auth");
 const { Countries, Configuration } = require("../shared/constants");
+const { uploadFile } = require("../controllers/file-controller");
 
 // Login route
 router.post("/login", userController.login);
+
+// Assassin profile
+router.get("/me", isAuthorized, userController.getProfile);
+router.put("/me", isAssassin, uploadFile('profilePicture'), userController.updateProfile);
 
 // Forgot password routes
 router.post("/forgot-password", userController.forgotPassword);
