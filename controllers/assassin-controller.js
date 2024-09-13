@@ -8,6 +8,7 @@ const mailController = require('./mail-controller');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const { fileValidator } = require('../shared/validators');
+const Mission = require("../models/mission");
 
 exports.createAssassin = async (req, res) => {
   try {
@@ -346,3 +347,39 @@ exports.getAssassinById = async (req, res) => {
     res.status(500).json({ message: "Error al obtener el asesino" });
   }
 }
+
+exports.getAssassinMissions = async (req, res) => {
+  try {
+    const missions = await Mission.aggregate([
+      {
+        $match: {
+          assignedTo: ObjectId.createFromHexString(req.params.id),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: "$createdBy",
+      },
+      {
+        $project: {
+          _id: 1,
+          description: 1,
+          status: 1,
+          createdBy: "$createdBy.name",
+        },
+      }
+    ]);
+
+    res.status(200).json(missions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener las misiones del asesino" });
+  }
+}  

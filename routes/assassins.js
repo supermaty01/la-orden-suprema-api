@@ -22,4 +22,7 @@ router.put("/purchase-information", isAssassin, assassinController.purchaseAssas
 // Get assassin by ID
 router.get("/:id", isAuthorized, assassinController.getAssassinById);
 
+// Get assassin missions
+router.get("/:id/missions", isAdmin, assassinController.getAssassinMissions);
+
 module.exports = router;
