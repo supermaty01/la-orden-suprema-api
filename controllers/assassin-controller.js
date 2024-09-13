@@ -3,12 +3,13 @@ const Transaction = require('../models/transaction');
 const FileModel = require('../models/file');
 const bcrypt = require('bcrypt');
 const z = require('zod');
-const { UserRole, UserStatus, Configuration, TransactionDescription, TransactionType } = require('../shared/constants');
+const { UserRole, UserStatus, Configuration, TransactionDescription, TransactionType, BloodDebtStatus } = require('../shared/constants');
 const mailController = require('./mail-controller');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const { fileValidator } = require('../shared/validators');
 const Mission = require("../models/mission");
+const bloodDebt = require('../models/blood-debt');
 
 exports.createAssassin = async (req, res) => {
   try {
@@ -382,4 +383,88 @@ exports.getAssassinMissions = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Error al obtener las misiones del asesino" });
   }
-}  
+}
+
+exports.getAssassinDebts = async (req, res) => {
+  try {
+    const debtsToPay = await bloodDebt.aggregate([
+      {
+        $match: {
+          createdBy: ObjectId.createFromHexString(req.params.id),
+          status: BloodDebtStatus.PENDING,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "paidTo",
+          foreignField: "_id",
+          as: "paidTo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$paidTo",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          missionId: "$createdMission",
+          paidTo: {
+            $cond: {
+              if: "$paidTo",
+              then: {
+                _id: "$paidTo._id",
+                name: "$paidTo.name",
+              },
+              else: null,
+            },
+          },
+        },
+      }
+    ]);
+
+    const debtsToCollect = await bloodDebt.aggregate([
+      {
+        $match: {
+          paidTo: ObjectId.createFromHexString(req.params.id),
+          status: BloodDebtStatus.PAID_INITIAL_MISSION,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: "$createdBy",
+      },
+      {
+        $project: {
+          _id: 1,
+          missionId: "$createdMission",
+          paidTo: {
+            $cond: {
+              if: "$createdBy",
+              then: {
+                _id: "$createdBy._id",
+                name: "$createdBy.name",
+              },
+              else: null,
+            },
+          },
+        },
+      }
+    ]);
+
+    res.status(200).json({ debtsToPay, debtsToCollect });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al obtener las deudas del asesino" });
+  }
+}
