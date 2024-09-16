@@ -2,10 +2,35 @@ const z = require("zod");
 const User = require("../models/user");
 const Transaction = require("../models/transaction");
 const { TransactionDescription, TransactionType } = require("../shared/constants");
+const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Types;
 
 exports.listTransactions = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.userId }, { _id: 0, userId: 0, __v: 0 }).sort({ date: -1 });
+    const transactions = await Transaction.aggregate([
+      {
+        $match: {
+          userId: ObjectId.createFromHexString(req.userId),
+        },
+      },
+      {
+        $project: {
+          description: 1,
+          amount: {
+            $cond: {
+              if: { $gte: ["$amount", 0] },
+              then: { $concat: ["+", { $toString: "$amount" }] },
+              else: { $toString: "$amount" },
+            },
+          },
+          type: 1,
+          date: 1,
+        },
+      },
+      {
+        $sort: { date: -1 },
+      },
+    ]);
     const user = await User.findById(req.userId);
     res.status(200).json({ transactions, coins: user.coins });
   } catch (error) {
