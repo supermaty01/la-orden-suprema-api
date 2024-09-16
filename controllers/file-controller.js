@@ -11,7 +11,7 @@ exports.uploadFile = (fileName) => {
         } else if (err) {
           res.status(400).json({ message: err.message });
         } else {
-          req.file = req.file || {};
+          req.file = req.file || undefined;
           next();
         }
       });
