@@ -4,6 +4,7 @@ const z = require('zod');
 const jwt = require('jsonwebtoken');
 const mailController = require('./mail-controller');
 const { UserStatus } = require('../shared/constants');
+const { fileValidator } = require('../shared/validators');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
