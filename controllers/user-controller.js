@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const FileModel = require('../models/file');
 const bcrypt = require('bcrypt');
 const z = require('zod');
 const jwt = require('jsonwebtoken');
