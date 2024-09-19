@@ -7,8 +7,7 @@ const mailController = require('./mail-controller');
 const { UserStatus } = require('../shared/constants');
 const { fileValidator } = require('../shared/validators');
 const crypto = require('crypto');
-const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
+const { toObjectId } = require('../shared/utils');
 
 exports.login = async (req, res) => {
   try {
@@ -136,7 +135,7 @@ exports.getProfile = async (req, res) => {
     const user = await User.aggregate([
       {
         $match: {
-          _id: ObjectId.createFromHexString(req.userId),
+          _id: toObjectId(req.userId),
         },
       },
       {
@@ -168,8 +167,10 @@ exports.getProfile = async (req, res) => {
     ]);
 
     res.status(200).json(user[0]);
-  }
-  catch (error) {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener el perfil del usuario" });
   }

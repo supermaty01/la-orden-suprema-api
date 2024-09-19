@@ -6,8 +6,7 @@ const FileModel = require('../models/file');
 const BloodDebt = require("../models/blood-debt");
 const z = require('zod');
 const { fileValidator } = require('../shared/validators');
-const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
+const { toObjectId } = require('../shared/utils');
 
 exports.createMission = async (req, res) => {
   try {
@@ -165,7 +164,7 @@ exports.getGeneralMissions = async (req, res) => {
   try {
     const filters = {
       status: MissionStatus.PUBLISHED,
-      createdBy: { $ne: ObjectId.createFromHexString(req.userId) },
+      createdBy: { $ne: toObjectId(req.userId) },
     };
 
     const missions = await Mission.aggregate([
@@ -199,6 +198,9 @@ exports.getGeneralMissions = async (req, res) => {
     ]);
     res.status(200).json(missions);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener las misiones" });
   }
@@ -207,7 +209,7 @@ exports.getGeneralMissions = async (req, res) => {
 exports.getAssignedMissions = async (req, res) => {
   try {
     const filters = {
-      assignedTo: ObjectId.createFromHexString(req.userId),
+      assignedTo: toObjectId(req.userId),
     };
 
     if (req.query.status) {
@@ -248,6 +250,9 @@ exports.getAssignedMissions = async (req, res) => {
     ]);
     res.status(200).json(missions);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener las misiones" });
   }
@@ -256,7 +261,7 @@ exports.getAssignedMissions = async (req, res) => {
 exports.getMissionsCreatedByMe = async (req, res) => {
   try {
     const filters = {
-      createdBy: ObjectId.createFromHexString(req.userId),
+      createdBy: toObjectId(req.userId),
     };
 
     if (req.query.status) {
@@ -292,6 +297,9 @@ exports.getMissionsCreatedByMe = async (req, res) => {
     ]);
     res.status(200).json(missions);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener las misiones" });
   }
@@ -302,7 +310,7 @@ exports.getMissionById = async (req, res) => {
     const missions = await Mission.aggregate([
       {
         $match: {
-          _id: ObjectId.createFromHexString(req.params.id),
+          _id: toObjectId(req.params.id),
         },
       },
       {
@@ -390,6 +398,9 @@ exports.getMissionById = async (req, res) => {
     }
     res.status(200).json(mission);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener la misión" });
   }

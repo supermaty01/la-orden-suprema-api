@@ -2,15 +2,14 @@ const z = require("zod");
 const User = require("../models/user");
 const Transaction = require("../models/transaction");
 const { TransactionDescription, TransactionType } = require("../shared/constants");
-const mongoose = require("mongoose");
-const { ObjectId } = mongoose.Types;
+const { toObjectId } = require('../shared/utils');
 
 exports.listTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.aggregate([
       {
         $match: {
-          userId: ObjectId.createFromHexString(req.userId),
+          userId: toObjectId(req.userId),
         },
       },
       {
@@ -34,6 +33,9 @@ exports.listTransactions = async (req, res) => {
     const user = await User.findById(req.userId);
     res.status(200).json({ transactions, coins: user.coins });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al listar las transacciones" });
   }

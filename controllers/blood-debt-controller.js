@@ -1,14 +1,13 @@
 const BloodDebt = require("../models/blood-debt");
-const mongoose = require("mongoose");
 const { BloodDebtStatus } = require("../shared/constants");
-const { ObjectId } = mongoose.Types;
+const { toObjectId } = require('../shared/utils');
 
 exports.getUsersWithDebts = async (req, res) => {
   try {
     const users = await BloodDebt.aggregate([
       {
         $match: {
-          paidTo: ObjectId.createFromHexString(req.userId),
+          paidTo: toObjectId(req.userId),
           status: BloodDebtStatus.PAID_INITIAL_MISSION,
         },
       },
@@ -32,6 +31,9 @@ exports.getUsersWithDebts = async (req, res) => {
     ]);
     res.status(200).json(users);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener los usuarios con deudas" });
   }

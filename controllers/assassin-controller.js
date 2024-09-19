@@ -5,8 +5,7 @@ const bcrypt = require('bcrypt');
 const z = require('zod');
 const { UserRole, UserStatus, Configuration, TransactionDescription, TransactionType, BloodDebtStatus } = require('../shared/constants');
 const mailController = require('./mail-controller');
-const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
+const { toObjectId } = require('../shared/utils');
 const { fileValidator } = require('../shared/validators');
 const Mission = require("../models/mission");
 const bloodDebt = require('../models/blood-debt');
@@ -85,7 +84,7 @@ exports.updateAssassin = async (req, res) => {
 
     const { name, alias, country, address } = req.body;
 
-    const existingAlias = await User.findOne({ alias, _id: { $ne: ObjectId.createFromHexString(req.params.id) } });
+    const existingAlias = await User.findOne({ alias, _id: { $ne: toObjectId(req.params.id) } });
     if (existingAlias) {
       return res.status(400).json({ message: "El pseudónimo ya está en uso" });
     }
@@ -191,7 +190,7 @@ exports.listAssassins = async (req, res) => {
       });
     } else {
       filters.status = UserStatus.ACTIVE;
-      filters._id = { $ne: ObjectId.createFromHexString(req.userId) };
+      filters._id = { $ne: toObjectId(req.userId) };
 
       const user = await User.findById(req.userId);
       const assassinInformationBought = user.assassinInformationBought;
@@ -234,6 +233,9 @@ exports.listAssassins = async (req, res) => {
 
     res.status(200).json(assassins);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al listar los asesinos" });
   }
@@ -324,7 +326,7 @@ exports.getAssassinById = async (req, res) => {
     const assassin = await User.aggregate([
       {
         $match: {
-          _id: ObjectId.createFromHexString(req.params.id),
+          _id: toObjectId(req.params.id),
         },
       },
       {
@@ -358,7 +360,7 @@ exports.getAssassinMissions = async (req, res) => {
     const missions = await Mission.aggregate([
       {
         $match: {
-          assignedTo: ObjectId.createFromHexString(req.params.id),
+          assignedTo: toObjectId(req.params.id),
         },
       },
       {
@@ -384,6 +386,9 @@ exports.getAssassinMissions = async (req, res) => {
 
     res.status(200).json(missions);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener las misiones del asesino" });
   }
@@ -394,7 +399,7 @@ exports.getAssassinDebts = async (req, res) => {
     const debtsToPay = await bloodDebt.aggregate([
       {
         $match: {
-          createdBy: ObjectId.createFromHexString(req.params.id),
+          createdBy: toObjectId(req.params.id),
           status: BloodDebtStatus.PENDING,
         },
       },
@@ -433,7 +438,7 @@ exports.getAssassinDebts = async (req, res) => {
     const debtsToCollect = await bloodDebt.aggregate([
       {
         $match: {
-          paidTo: ObjectId.createFromHexString(req.params.id),
+          paidTo: toObjectId(req.params.id),
           status: BloodDebtStatus.PAID_INITIAL_MISSION,
         },
       },
@@ -468,6 +473,9 @@ exports.getAssassinDebts = async (req, res) => {
 
     res.status(200).json({ debtsToPay, debtsToCollect });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors);
+    }
     console.error(error);
     res.status(500).json({ message: "Error al obtener las deudas del asesino" });
   }
