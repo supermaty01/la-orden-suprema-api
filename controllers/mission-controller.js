@@ -146,11 +146,15 @@ exports.getAdminMissions = async (req, res) => {
             $ifNull: ["$assignedTo.name", ""],
           },
           description: 1,
+          createdAt: 1,
           status: 1,
         },
       },
       {
         $match: filters,
+      },
+      {
+        $sort: { createdAt: -1 },
       },
     ]);
     res.status(200).json(missions);
@@ -193,7 +197,11 @@ exports.getGeneralMissions = async (req, res) => {
             },
           },
           description: 1,
+          createdAt: 1,
         },
+      },
+      {
+        $sort: { createdAt: -1 },
       },
     ]);
     res.status(200).json(missions);
@@ -245,7 +253,11 @@ exports.getAssignedMissions = async (req, res) => {
           },
           description: 1,
           status: 1,
+          createdAt: 1,
         },
+      },
+      {
+        $sort: { createdAt: -1 },
       },
     ]);
     res.status(200).json(missions);
@@ -292,7 +304,11 @@ exports.getMissionsCreatedByMe = async (req, res) => {
           assignedTo: "$assignedTo.alias",
           description: 1,
           status: 1,
+          createdAt: 1,
         },
+      },
+      {
+        $sort: { createdAt: -1 },
       },
     ]);
     res.status(200).json(missions);

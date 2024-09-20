@@ -227,6 +227,9 @@ exports.listAssassins = async (req, res) => {
             isPurchased: 1,
           },
         },
+        {
+          $sort: { name: 1 },
+        }
       ]);
     }
 
