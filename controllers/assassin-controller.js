@@ -403,7 +403,9 @@ exports.getAssassinDebts = async (req, res) => {
       {
         $match: {
           createdBy: toObjectId(req.params.id),
-          status: BloodDebtStatus.PENDING,
+          status: {
+            $ne: BloodDebtStatus.REJECTED,
+          },
         },
       },
       {
@@ -423,7 +425,8 @@ exports.getAssassinDebts = async (req, res) => {
       {
         $project: {
           _id: 1,
-          missionId: "$createdMission",
+          createdMission: "$createdMission", // Misión deuda (inicial)
+          paidMission: "$paidMission", // Misión cobro (final)
           paidTo: {
             $cond: {
               if: "$paidTo",
@@ -433,7 +436,7 @@ exports.getAssassinDebts = async (req, res) => {
               },
               else: null,
             },
-          },
+          }, // A quien se le debe
         },
       }
     ]);
@@ -442,7 +445,9 @@ exports.getAssassinDebts = async (req, res) => {
       {
         $match: {
           paidTo: toObjectId(req.params.id),
-          status: BloodDebtStatus.PAID_INITIAL_MISSION,
+          status: {
+            $in: [BloodDebtStatus.PAID_INITIAL_MISSION, BloodDebtStatus.PENDING_COLLECTION_APPROVAL, BloodDebtStatus.COMPLETED, BloodDebtStatus.PAID],
+          },
         },
       },
       {
@@ -459,22 +464,20 @@ exports.getAssassinDebts = async (req, res) => {
       {
         $project: {
           _id: 1,
-          missionId: "$createdMission",
-          paidTo: {
-            $cond: {
-              if: "$createdBy",
-              then: {
-                _id: "$createdBy._id",
-                name: "$createdBy.name",
-              },
-              else: null,
-            },
-          },
+          missionId: "$createdMission", // Misión deuda (inicial)
+          paidMission: "$paidMission", // Misión cobro (final)
+          createdBy: {
+            _id: "$createdBy._id",
+            name: "$createdBy.name",
+          }, // A quien se le cobra
         },
       }
     ]);
 
-    res.status(200).json({ debtsToPay, debtsToCollect });
+    res.status(200).json({
+      debtsToPay, // Deudas de sangre
+      debtsToCollect // Cobros de deudas de sangre
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json(error.errors);
